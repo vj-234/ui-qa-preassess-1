@@ -1,0 +1,41 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main          # Runs automatically on every push to main
+  workflow_dispatch:  # Also allows manual trigger from GitHub Actions tab
+
+permissions:
+  contents: write     # Needed to push to the gh-pages branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React app
+        env:
+          # These come from Settings → Secrets → Actions in your GitHub repo
+          REACT_APP_APPS_SCRIPT_URL: ${{ secrets.REACT_APP_APPS_SCRIPT_URL }}
+          REACT_APP_INTERVIEWER_PIN: ${{ secrets.REACT_APP_INTERVIEWER_PIN }}
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}  # Auto-provided by GitHub, no setup needed
+          publish_dir: ./build
+          publish_branch: gh-pages
